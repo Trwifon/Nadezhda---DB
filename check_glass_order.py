@@ -1,14 +1,20 @@
 import mysql.connector
+import mysql.connector.locales.eng
+from mysql.connector.plugins import caching_sha2_password
+from mysql.connector.plugins import mysql_native_password
 import tkinter as tk
 from tkinter import ttk
 import tkinter.font as tkFont
 from _datetime import datetime
 
 dict_connection = {
-    'host': '127.0.0.1',
+    # 'host': '127.0.0.1',
+    'host': '192.168.5.175',
     'port': '3306',
-    'user': 'root',
-    'password': 'Proba123+',
+    # 'user': 'root',
+    'user': 'Tsonka',
+    # 'password': 'Proba123+',
+    'password': 'Tsonka123+',
     'database': 'nadejda-94'
 }
 connection = mysql.connector.connect(**dict_connection)
