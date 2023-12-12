@@ -22,10 +22,13 @@ empty_dictionary = {
 main_dictionary = empty_dictionary.copy()
 
 dict_connection = {
-    'host': '127.0.0.1',
+    # 'host': '127.0.0.1',
+    'host': '192.168.5.175',
     'port': '3306',
-    'user': 'root',
-    'password': 'Proba123+',
+    # 'user': 'root',
+    'user': 'Tsonka',
+    # 'password': 'Proba123+',
+    'password': 'Tsonka123+',
     'database': 'nadejda-94'
 }
 connection = mysql.connector.connect(**dict_connection)
@@ -254,6 +257,13 @@ def ok_button():
     clear_main_dictionary()
     return
 
+#exit
+def exit_button():
+    cursor.close()
+    connection.close()
+    entry_window.destroy()
+    return
+
 # create entry window
 entry_window = tk.Tk()
 entry_window.title('Форма за въвеждане')
@@ -262,7 +272,6 @@ def_font = tk.font.nametofont("TkDefaultFont")
 def_font.config(size=20)
 
 radio_var = tkinter.IntVar()
-
 warehouse_label = ttk.Label(entry_window, width=20, text=(f"Склад: {main_dictionary['warehouse']}"),
                             anchor="c", font=('Helvetica', 20))
 warehouse_label.grid(row=0, column=0, padx=20, pady=20)
@@ -311,7 +320,7 @@ firm_report_button = ttk.Button(entry_window, width=18, text='Фирмен от�
 firm_report_button.grid(row=9, columnspan=2, column=0, sticky="e", padx=40, pady=20)
 ok_button = ttk.Button(entry_window, width=8, text='OK', command=ok_button)
 ok_button.grid(row=10, columnspan=2, column=0, sticky="w", padx=192, pady=20)
-cancel_button = ttk.Button(entry_window, width=8, text='Изход', command=entry_window.destroy)
+cancel_button = ttk.Button(entry_window, width=8, text='Изход', command=exit_button)
 cancel_button.grid(row=10, columnspan=2, column=0, sticky="e", padx=190, pady=20)
 
 # day_report
@@ -333,10 +342,14 @@ tree_day_report.heading('firm', text='Фирма', anchor=tk.CENTER)
 tree_day_report.heading('action', text='Действие', anchor=tk.CENTER)
 tree_day_report.heading('ammount', text='Сума', anchor=tk.CENTER)
 tree_day_report.heading('note', text='Забележка', anchor=tk.CENTER)
+
+
+
 cursor.execute("SELECT partner.partner_name, records.order_type, records.ammount, records.note FROM records INNER"
                " JOIN partner ON records.partner_id = partner.partner_id"
-               " WHERE warehouse = 'PVC' and date = current_date")
+               " WHERE warehouse = 'Поръчки PVC' and date = current_date")
 today_orders = cursor.fetchall()
+print(today_orders)
 for row in today_orders:
     tree_day_report.insert('', 'end', values=row)
     if row[1] == 'Каса':
@@ -348,5 +361,4 @@ tree_day_report.insert('', 2, values=())
 entry_window.mainloop()
 
 
-# разгъване на комбобокс при въвеждане
-# архивиране и изпращане на базата данни
+
