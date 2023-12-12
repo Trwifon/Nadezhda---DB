@@ -1,5 +1,8 @@
 import tkinter
 import mysql.connector
+import mysql.connector.locales.eng
+from mysql.connector.plugins import caching_sha2_password
+from mysql.connector.plugins import mysql_native_password
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
