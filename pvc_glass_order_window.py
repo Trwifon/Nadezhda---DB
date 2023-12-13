@@ -20,6 +20,18 @@ dict_connection = {
 connection = mysql.connector.connect(**dict_connection)
 cursor = connection.cursor()
 
+#variables
+empty_dictionary = {'firm': '', 'order': '', 'length': 0, 'width': 0, 'count': 0, 'type': '', 'price': 0.0,
+                    'sum_count': 0, 'sum_area': 0.0, 'sum_total': 0.0, 'done': 0}
+data_dictionary = empty_dictionary.copy()
+list_glass = ['4', '5', 'K', '4S']
+tickness = [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 42, 44]
+list_month = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
+list_number = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
+               29, 30]
+order_list = []
+index = 0
+
 
 def list_combobox():
     cursor.execute("SELECT partner_name FROM partner")
@@ -37,27 +49,30 @@ def update_cb(event):
 
 
 def ok_button_press(event=None):
-    data_dictionary['firm'] = firm_cb.get()
-    data_dictionary['order'] = f"{order_label['text']}{order_month_cb.get()}-{order_day_cb.get()}"
-    data_dictionary['length'], data_dictionary['width'], data_dictionary['count'] = \
-        int(length_entry.get()), int(width_entry.get()), int(count_entry.get())
-    if third_glass_cb.get() == "":
-        data_dictionary['type'] = f"{first_glass_cb.get()}+{second_glass_cb.get()}={tickness_cb.get()}"
+    if firm_cb.get() == '':
+        messagebox.showinfo('Предупреждение', 'Няма избрана фирма!')
     else:
-        data_dictionary['type'] = f"{first_glass_cb.get()}+{second_glass_cb.get()}+{third_glass_cb.get()}=" \
-                                  f"{tickness_cb.get()}"
-    data_dictionary['price'] = float(price_entry.get())
-    data_dictionary['sum_count'] += int(count_entry.get())
-    current_area = data_dictionary['length'] * data_dictionary['width'] / 1000000
-    if current_area <= 0.3:
-        current_area = 0.3
-    data_dictionary['sum_area'] += current_area * int(count_entry.get())
-    data_dictionary['sum_total'] = data_dictionary['sum_area'] * data_dictionary['price']
-    order_list.append(data_dictionary.copy())
-    length_entry.focus_set()
-    length_entry.select_range(0, 4)
-    order_tuple = tuple(data_dictionary.values())
-    tree_order.insert('', 'end', values=order_tuple)
+        data_dictionary['firm'] = firm_cb.get()
+        data_dictionary['order'] = f"{order_label['text']}{order_month_cb.get()}-{order_day_cb.get()}"
+        data_dictionary['length'], data_dictionary['width'], data_dictionary['count'] = \
+            int(length_entry.get()), int(width_entry.get()), int(count_entry.get())
+        if third_glass_cb.get() == "":
+            data_dictionary['type'] = f"{first_glass_cb.get()}+{second_glass_cb.get()}={tickness_cb.get()}"
+        else:
+            data_dictionary['type'] = f"{first_glass_cb.get()}+{second_glass_cb.get()}+{third_glass_cb.get()}=" \
+                                      f"{tickness_cb.get()}"
+        data_dictionary['price'] = float(price_entry.get())
+        data_dictionary['sum_count'] += int(count_entry.get())
+        current_area = data_dictionary['length'] * data_dictionary['width'] / 1000000
+        if current_area <= 0.3:
+            current_area = 0.3
+        data_dictionary['sum_area'] += current_area * int(count_entry.get())
+        data_dictionary['sum_total'] = data_dictionary['sum_area'] * data_dictionary['price']
+        order_list.append(data_dictionary.copy())
+        length_entry.focus_set()
+        length_entry.select_range(0, 4)
+        order_tuple = tuple(data_dictionary.values())
+        tree_order.insert('', 'end', values=order_tuple)
     return
 
 
@@ -145,6 +160,7 @@ def clear_checked_data():
     count_entry.delete(0, 5)
     return
 
+
 def tab_order():
     widgets = [firm_cb, order_month_cb, order_day_cb, first_glass_cb, second_glass_cb, third_glass_cb,
                tickness_cb, price_entry, length_entry, width_entry, count_entry, ok_button]
@@ -175,14 +191,19 @@ def clear_form():
     return
 
 
-def left_button_press():
-    global index, change_flag
+def check_change():
     if second_glass_cb.get() != order_list[index]['type'] or int(length_entry.get()) != order_list[index]['length'] or \
             int(width_entry.get()) != order_list[index]['width'] or \
             int(count_entry.get()) != order_list[index]['count'] or \
             float(price_entry.get()) != order_list[index]['price']:
         update_data_in_dictionary(index)
         calculate_total()
+    return
+
+
+def left_button_press():
+    global index
+    check_change()
     index -= 1
     if index < 0:
         index = 0
@@ -193,15 +214,11 @@ def left_button_press():
 
 def right_button_press():
     global index, change_flag
-    if second_glass_cb.get() != order_list[index]['type'] or int(length_entry.get()) != order_list[index]['length'] or \
-            int(width_entry.get()) != order_list[index]['width'] or \
-            int(count_entry.get()) != order_list[index]['count'] or \
-            float(price_entry.get()) != order_list[index]['price']:
-        update_data_in_dictionary(index)
-        calculate_total()
+    check_change()
     index += 1
     if index == len(order_list):
         index = len(order_list) - 1
+        update_db_button['state'] = tk.ACTIVE
     clear_checked_data()
     display_data(index)
     return
@@ -227,6 +244,7 @@ def calculate_total():
 
 
 def end_order():
+    global order_list, index
     update_db()
     clear_form()
     left_button['state'] = tk.DISABLED
@@ -240,19 +258,12 @@ def end_order():
     tickness_cb['state'] = tk.ACTIVE
     ok_button['state'] = tk.ACTIVE
     finish_button['state'] = tk.ACTIVE
+    update_db_button['state'] = tk.DISABLED
     messagebox.showinfo('Запис в базата данни', 'Поръчката е записана в базата данни!')
+    order_list = []
+    index = 0
     return
-#variables
-empty_dictionary = {'firm': '', 'order': '', 'length': 0, 'width': 0, 'count': 0, 'type': '', 'price': 0.0,
-                    'sum_count': 0, 'sum_area': 0.0, 'sum_total': 0.0, 'done': 0}
-data_dictionary = empty_dictionary.copy()
-list_glass = ['4', '5', 'K', '4S']
-tickness = [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 42, 44]
-list_month = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
-list_number = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
-               29, 30]
-order_list = []
-index = 0
+
 
 # create entry window
 glass_entry_window = tk.Tk()
@@ -398,4 +409,5 @@ tree_order.heading('done', text='Изпълнено', anchor=tk.CENTER)
 
 left_button['state'] = tk.DISABLED
 right_button['state'] = tk.DISABLED
+update_db_button['state'] = tk.DISABLED
 glass_entry_window.mainloop()
