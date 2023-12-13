@@ -3,7 +3,7 @@ import mysql.connector.locales.eng
 from mysql.connector.plugins import caching_sha2_password
 from mysql.connector.plugins import mysql_native_password
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import tkinter.font as tkFont
 from _datetime import datetime
 
@@ -87,14 +87,21 @@ def clear_data():
     price_entry.delete(0,30)
     return
 
-def forward_button_press():
-    global index
-    if kind_entry.get() != order_list_check[index]['type'] or int(length_entry.get()) != order_list_check[index]['length'] or \
+def check_change(index):
+    global change_flag
+    if kind_entry.get() != order_list_check[index]['type'] or \
+            int(length_entry.get()) != order_list_check[index]['length'] or \
             int(width_entry.get()) != order_list_check[index]['width'] or \
             int(count_entry.get()) != order_list_check[index]['count'] or \
             float(price_entry.get()) != order_list_check[index]['price']:
         update_data_in_dictionary(index)
         calculate_total()
+        change_flag = True
+    return
+
+def forward_button_press():
+    global index
+    check_change(index)
     index += 1
     if index == len(order_list_check):
         index = len(order_list_check) - 1
@@ -103,13 +110,8 @@ def forward_button_press():
     return
 
 def backward_button_press():
-    global index, change_flag
-    if kind_entry.get() != order_list_check[index]['type'] or int(length_entry.get()) != order_list_check[index]['length'] or \
-            int(width_entry.get()) != order_list_check[index]['width'] or \
-            int(count_entry.get()) != order_list_check[index]['count'] or \
-            float(price_entry.get()) != order_list_check[index]['price']:
-        update_data_in_dictionary(index)
-        calculate_total()
+    global index
+    check_change(index)
     index -= 1
     if index < 0:
         index = 0
@@ -151,10 +153,10 @@ def update_db():
                      "sum_area, sum_total, done) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)")
     for index in range(len(order_list_check)):
         order_data = (
-            order_list_check[index]['firm'], order_list_check[index]['order'], order_list_check[index]['length'], order_list_check[index]['width'],
-            order_list_check[index]['count'], order_list_check[index]['type'], order_list_check[index]['price'],
-            order_list_check[index]['sum_count'], order_list_check[index]['sum_area'], order_list_check[index]['sum_total'],
-            order_list_check[index]['done'])
+            order_list_check[index]['firm'], order_list_check[index]['order'], order_list_check[index]['length'],
+            order_list_check[index]['width'], order_list_check[index]['count'], order_list_check[index]['type'],
+            order_list_check[index]['price'], order_list_check[index]['sum_count'], order_list_check[index]['sum_area'],
+            order_list_check[index]['sum_total'], order_list_check[index]['done'])
         cursor.execute(insert_orders, order_data)
 
     #update partner table
@@ -175,11 +177,7 @@ def update_db():
 
 def ok_button_press():
     if change_flag:
-        calculate_total()
         update_db()
-        tree_order.insert('', 'end', values='')
-        tree_order.insert('', 'end', values='Нова:')
-        get_data(order_entry.get())
 
         kind_entry['state'] = tk.DISABLED
         length_entry['state'] = tk.DISABLED
@@ -189,6 +187,8 @@ def ok_button_press():
         left_button['state'] = tk.DISABLED
         right_button['state'] = tk.DISABLED
         ok_button['state'] = tk.DISABLED
+
+        messagebox.showinfo('Запис на данни', 'Данните са записани!')
     return
 
 def finish():
@@ -205,11 +205,12 @@ empty_record_dictionary = {"firm_id": 0, "old_total": 0.0, "new_total": 0.0, "ch
                            "close_balance": 0, "note": ''}
 record_dictionary = empty_record_dictionary.copy()
 index = 0
+change_flag = False
 
 # create entry window
 check_glass_entry_window = tk.Tk()
 check_glass_entry_window.title('Проверка на стъклопакетите')
-check_glass_entry_window.geometry('1300x650')
+check_glass_entry_window.geometry('1400x650')
 def_font = tk.font.nametofont("TkDefaultFont")
 def_font.config(size=20)
 check_glass_entry_window.option_add('*TCombobox*Listbox.font', ('Helvetica', 15))
@@ -265,7 +266,7 @@ tree_order.column('order', width=60, minwidth=50, anchor=tk.CENTER)
 tree_order.column('length', width=60, minwidth=50, anchor=tk.CENTER)
 tree_order.column('width', width=60, minwidth=50, anchor=tk.CENTER)
 tree_order.column('count', width=60, minwidth=50, anchor=tk.CENTER)
-tree_order.column('type', width=60, minwidth=50, anchor=tk.CENTER)
+tree_order.column('type', width=100, minwidth=100, anchor=tk.CENTER)
 tree_order.column('price', width=60, minwidth=50, anchor=tk.CENTER)
 tree_order.column('sum_count', width=70, minwidth=50, anchor=tk.CENTER)
 tree_order.column('sum_area', width=80, minwidth=50, anchor=tk.CENTER)
