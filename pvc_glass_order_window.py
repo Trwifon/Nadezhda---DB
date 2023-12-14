@@ -43,7 +43,7 @@ def list_combobox():
 
 def update_cb(event):
     a = event.widget.get()
-    newvalues = [i for i in lst if a.lower() in i.lower()]
+    newvalues = [i for i in lst if i.lower().startswith(a.lower())]
     firm_cb['values'] = newvalues
     firm_cb.focus()
 
@@ -77,13 +77,13 @@ def ok_button_press(event=None):
 
 
 def update_db():
-    # get firm data
-    get_firm_id_and_balance = "SELECT partner_id, partner_balance FROM partner WHERE partner_name = %s"
-    firm = (order_list[-1]['firm'],)
-    cursor.execute(get_firm_id_and_balance, firm)
-    partner = cursor.fetchall()
-    firm_id, open_balance = int(partner[0][0]), float(partner[0][1])
-    close_balance = open_balance - order_list[-1]['sum_total']
+    # get firm data - we must not update records and partner with pvc order
+    # get_firm_id_and_balance = "SELECT partner_id, partner_balance FROM partner WHERE partner_name = %s"
+    # firm = (order_list[-1]['firm'],)
+    # cursor.execute(get_firm_id_and_balance, firm)
+    # partner = cursor.fetchall()
+    # firm_id, open_balance = int(partner[0][0]), float(partner[0][1])
+    # close_balance = open_balance - order_list[-1]['sum_total']
 
     # insert odrder
     insert_orders = ("INSERT INTO pvc_glass_orders (firm, order_id, length, width, count, type, price, sum_count, "
@@ -96,19 +96,20 @@ def update_db():
         order_list[index]['done'])
         cursor.execute(insert_orders, order_data)
 
-    # update records
-    insert_orders = ("INSERT INTO records (date, warehouse, partner_id, open_balance, order_type, ammount,"
-                     " close_balance, note)"
-                     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
-    order_data = (datetime.now().date(), 'Стъкла', firm_id, open_balance,
-                  'Поръчка', order_list[-1]['sum_total'], close_balance,
-                  order_list[-1]['order'])
-    cursor.execute(insert_orders, order_data)
+    # update records - we must not update records with pvc order
+    # insert_orders = ("INSERT INTO records (date, warehouse, partner_id, open_balance, order_type, ammount,"
+    #                  " close_balance, note)"
+    #                  "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
+    # order_data = (datetime.now().date(), 'Стъкла', firm_id, open_balance,
+    #               'Поръчка', order_list[-1]['sum_total'], close_balance,
+    #               order_list[-1]['order'])
+    # cursor.execute(insert_orders, order_data)
 
-    # update partner
-    update_partner = "UPDATE partner SET partner_balance = %s WHERE partner_id = %s"
-    data_update_partner = (close_balance, firm_id)
-    cursor.execute(update_partner, data_update_partner)
+    # update partner - we must not update partner with pvc order
+    # update_partner = "UPDATE partner SET partner_balance = %s WHERE partner_id = %s"
+    # data_update_partner = (close_balance, firm_id)
+    # cursor.execute(update_partner, data_update_partner)
+
     connection.commit()
     return
 
@@ -221,6 +222,7 @@ def right_button_press():
         update_db_button['state'] = tk.ACTIVE
     clear_checked_data()
     display_data(index)
+
     return
 
 
