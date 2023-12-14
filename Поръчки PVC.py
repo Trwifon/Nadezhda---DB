@@ -272,7 +272,7 @@ def exit_button():
 
 # create entry window
 entry_window = tk.Tk()
-entry_window.title('Форма за въвеждане')
+entry_window.title('Поръчки PVC')
 entry_window.geometry('1500x700')
 def_font = tk.font.nametofont("TkDefaultFont")
 def_font.config(size=20)
