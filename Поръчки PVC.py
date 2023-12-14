@@ -4,7 +4,7 @@ import mysql.connector.locales.eng
 from mysql.connector.plugins import caching_sha2_password
 from mysql.connector.plugins import mysql_native_password
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from datetime import datetime
 import tkinter.font as tkFont
 
@@ -25,13 +25,13 @@ empty_dictionary = {
 main_dictionary = empty_dictionary.copy()
 
 dict_connection = {
-    # 'host': '127.0.0.1',
-    'host': '192.168.5.175',
+    'host': '127.0.0.1',
+    # 'host': '192.168.5.175',
     'port': '3306',
-    # 'user': 'root',
-    'user': 'Tsonka',
-    # 'password': 'Proba123+',
-    'password': 'Tsonka123+',
+    'user': 'root',
+    # 'user': 'Tsonka',
+    'password': 'Proba123+',
+    # 'password': 'Tsonka123+',
     'database': 'nadejda-94'
 }
 connection = mysql.connector.connect(**dict_connection)
@@ -95,7 +95,7 @@ def get_pvc_order():
 # filter list of combobox when writing
 def update_cb(event):
     a = event.widget.get()
-    newvalues = [i for i in lst if a.lower() in i.lower()]
+    newvalues = [i for i in lst if i.lower().startswith(a.lower())]
     firm_cb['values'] = newvalues
     firm_cb.focus()
     return
@@ -222,42 +222,45 @@ def new_firm():
 # write in database end close entry_window
 def ok_button():
     global day_total_sum
-    main_dictionary['note'] = note_entry.get()
-    insert_orders = ("INSERT INTO records (date, warehouse, partner_id, open_balance, order_type, ammount,"
-                     " close_balance, note)"
-                     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
-    order_data = (main_dictionary['date'], main_dictionary['warehouse'], main_dictionary['partner_id'], main_dictionary['open_balance'],
-                  main_dictionary['order_type'], main_dictionary['amount'], main_dictionary['close_balance'],
-                  main_dictionary['note'])
-    insert_partner_balance = "UPDATE partner SET partner_balance = %s WHERE partner_id = %s"
-    partner_data = (main_dictionary['close_balance'], main_dictionary['partner_id'])
-    cursor.execute(insert_orders, order_data)
-    cursor.execute(insert_partner_balance, partner_data)
+    if firm_cb.get() not in list_combobox():
+        messagebox.showinfo('Съобщение', 'Името не е в списъка на фирми!')
+    else:
+        main_dictionary['note'] = note_entry.get()
+        insert_orders = ("INSERT INTO records (date, warehouse, partner_id, open_balance, order_type, ammount,"
+                         " close_balance, note)"
+                         "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
+        order_data = (main_dictionary['date'], main_dictionary['warehouse'], main_dictionary['partner_id'], main_dictionary['open_balance'],
+                      main_dictionary['order_type'], main_dictionary['amount'], main_dictionary['close_balance'],
+                      main_dictionary['note'])
+        insert_partner_balance = "UPDATE partner SET partner_balance = %s WHERE partner_id = %s"
+        partner_data = (main_dictionary['close_balance'], main_dictionary['partner_id'])
+        cursor.execute(insert_orders, order_data)
+        cursor.execute(insert_partner_balance, partner_data)
 
-    if main_dictionary['order_type'] == 'Поръчка':
-        cursor.execute("SELECT pvc_counter FROM orders")
-        pvc_counter = int(cursor.fetchone()[0])
-        pvc_counter += 1
-        insert_pvc_count = "UPDATE orders SET pvc_counter = %s"
-        current_counter = (pvc_counter,)
-        cursor.execute(insert_pvc_count, current_counter)
-    connection.commit()
+        if main_dictionary['order_type'] == 'Поръчка':
+            cursor.execute("SELECT pvc_counter FROM orders")
+            pvc_counter = int(cursor.fetchone()[0])
+            pvc_counter += 1
+            insert_pvc_count = "UPDATE orders SET pvc_counter = %s"
+            current_counter = (pvc_counter,)
+            cursor.execute(insert_pvc_count, current_counter)
+        connection.commit()
 
-    tree_day_report.insert('', 'end', values=(main_dictionary['partner_name'], main_dictionary['order_type'],
-                                              main_dictionary['amount'], main_dictionary['note']))
-    if main_dictionary['order_type'] == 'Каса':
-        day_total_sum += int(main_dictionary['amount'])
-        selected_item = tree_day_report.get_children()[1]
-        tree_day_report.delete(selected_item)
-        tree_day_report.insert('', 1, values=('', 'Наличност каса:', day_total_sum))
+        tree_day_report.insert('', 'end', values=(main_dictionary['partner_name'], main_dictionary['order_type'],
+                                                  main_dictionary['amount'], main_dictionary['note']))
+        if main_dictionary['order_type'] == 'Каса':
+            day_total_sum += int(main_dictionary['amount'])
+            selected_item = tree_day_report.get_children()[1]
+            tree_day_report.delete(selected_item)
+            tree_day_report.insert('', 1, values=('', 'Наличност каса:', day_total_sum))
 
-    firm_cb.set('')
-    open_balance_label['text'] = ''
-    amount_entry.delete(0, 'end')
-    radio_var.set(0)
-    close_balance_label['text'] = ''
-    note_entry.delete(0, 'end')
-    clear_main_dictionary()
+        firm_cb.set('')
+        open_balance_label['text'] = ''
+        amount_entry.delete(0, 'end')
+        radio_var.set(0)
+        close_balance_label['text'] = ''
+        note_entry.delete(0, 'end')
+        clear_main_dictionary()
     return
 
 #exit
