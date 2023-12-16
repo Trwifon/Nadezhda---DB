@@ -9,13 +9,13 @@ import csv
 import os
 
 dict_connection = {
-    # 'host': '127.0.0.1',
-    'host': '192.168.5.175',
+    'host': '127.0.0.1',
+    # 'host': '192.168.5.175',
     'port': '3306',
-    # 'user': 'root',
-    'user': 'Tsonka',
-    # 'password': 'Proba123+',
-    'password': 'Tsonka123+',
+    'user': 'root',
+    # 'user': 'Tsonka',
+    'password': 'Proba123+',
+    # 'password': 'Tsonka123+',
     'database': 'nadejda-94'
 }
 connection = mysql.connector.connect(**dict_connection)
@@ -27,13 +27,30 @@ def select(treeview):
     order = details.get('values')[1]
     return order
 
+def data_prepare(current_order: list):
+    total_count, sum_area = current_order[-1][-2], current_order[-1][-1]
+    current_order_result = []
+    for current_row in current_order:
+        list_row = []
+        for index in range(len(current_row) - 2):
+            list_row.append(current_row[index])
+            if index == 1:
+                list_row[index]+= '/' + str(total_count)
+        current_row = tuple(list_row)
+        print(current_row)
+        current_order_result.append(current_row)
+    sum_area = (sum_area,)
+    current_order_result.append(sum_area)
+    return current_order_result
+
 def move_pvc():
     if messagebox.askyesno('Преместване на данни?', 'Поръчката ще бъде преместена и данните ще бъдат изтрити!'):
         order_to_move = (select(pvc_treeview),)
-        get_order = "SELECT firm, order_id, length, width, count, type FROM pvc_glass_orders WHERE order_id = %s " \
-                    "AND done = 0"
+        get_order = "SELECT firm, order_id, length, width, count, type, sum_count, sum_area FROM pvc_glass_orders " \
+                    "WHERE order_id = %s AND done = 0"
         cursor.execute(get_order, order_to_move)
         rows = cursor.fetchall()
+        rows = data_prepare(rows)
         for row in rows:
             result_treeview.insert('', 'end', values=row)
         data_update = "UPDATE pvc_glass_orders SET done = 1 WHERE order_id = %s AND done = 0"
@@ -50,13 +67,14 @@ def move_pvc():
 def move_glass():
     if messagebox.askyesno('Преместване на данни?', 'Поръчката ще бъде преместена и данните ще бъдат изтрити!'):
         order_to_move = (select(glass_treeview),)
-        get_order = "SELECT firm, order_id, length, width, count, type FROM glass_glass_orders WHERE order_id = %s " \
-                    "AND done = 0"
+        get_order = "SELECT firm, order_id, length, width, count, type, sum_count, sum_area FROM glass_glass_orders" \
+                    " WHERE order_id = %s AND done = 0"
         cursor.execute(get_order, order_to_move)
         rows = cursor.fetchall()
+        rows = data_prepare(rows)
         for row in rows:
             result_treeview.insert('', 'end', values=row)
-        data_update = "UPDATE pvc_glass_orders SET done = 1 WHERE order_id = %s AND done = 0"
+        data_update = "UPDATE glass_glass_orders SET done = 1 WHERE order_id = %s AND done = 0"
         order_id = (select(glass_treeview),)
         cursor.execute(data_update, order_id)
         connection.commit()
@@ -68,13 +86,15 @@ def move_glass():
     return
 
 def export_result():
-    file_name = filedialog.asksaveasfilename(initialdir=os.getcwd(), title='Save CSV', filetypes=(('CSV File', '*.csv'), ('all Files', '*.*')))
+    file_name = filedialog.asksaveasfilename(initialdir=os.getcwd(), title='Save CSV', filetypes=(('CSV File',
+                '*.csv'), ('all Files', '*.*')))
     with open(file_name, mode='w', newline='') as myfile:
         exp_writer = csv.writer(myfile, delimiter=',')
         for i in result_treeview.get_children():
             row = result_treeview.item(i)['values']
-            row.insert(4, 'R')
-            row.insert(6, row[5])
+            if len(row) == 6:
+                row.insert(4, 'R')
+                row.insert(6, row[5])
             exp_writer.writerow(row)
     messagebox.showinfo('Край', 'Файлът за разкрой е създаден!')
     cursor.close()
@@ -92,7 +112,7 @@ wrapper1.pack(side=tk.LEFT, fill='both', expand="yes", padx=1, pady=1)
 wrapper2.pack(side=tk.LEFT, fill='both', expand="yes", padx=1, pady=1)
 wrapper3.pack(side=tk.LEFT, fill='both', expand="yes", padx=1, pady=1)
 
-glass_cutting_order.title = 'Файл за производство'
+glass_cutting_order.title = 'Производство'
 glass_cutting_order.geometry('1500x740')
 
 cursor.execute("SELECT firm, order_id, length, width, count, type FROM pvc_glass_orders WHERE done = 0")
@@ -157,7 +177,7 @@ result_treeview.heading(4, text='Ширина')
 result_treeview.heading(5, text='Брой')
 result_treeview.heading(6, text='Вид')
 result_treeview.column(1, width=130)
-result_treeview.column(2, width=60)
+result_treeview.column(2, width=70)
 result_treeview.column(3, width=60)
 result_treeview.column(4, width=60)
 result_treeview.column(5, width=50)
